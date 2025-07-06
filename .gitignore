@@ -1,0 +1,15 @@
+# Ignore Python virtual environment
+venv/
+
+# Ignore Python bytecode and cache
+__pycache__/
+*.py[cod]
+
+# Ignore environment files
+.env
+
+# Ignore database (optional — only if you don’t want to track it)
+ecofood.db
+
+# Ignore VSCode settings (optional)
+.vscode/
