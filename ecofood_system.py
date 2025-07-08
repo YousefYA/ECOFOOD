@@ -13,9 +13,8 @@ from ultralytics import YOLO
 import openai
 import os
 from typing import List, Dict
-import torch
 from profile import get_profile, update_profile
-import base64
+import torch
 
 # Page configuration
 st.set_page_config(
@@ -764,6 +763,33 @@ def detect_and_add_ingredients(image_file, openai_api_key, show_success=True):
         return 0
 
 # Sidebar navigation (updated to include food detection)
+
+def update_profile_page():
+    user = st.session_state.user
+    if not user:
+        st.warning("🔒 You must log in to update your profile.")
+        st.session_state.page = "login"
+        return
+
+    st.title("👤 Update Your Profile")
+    profile = get_profile(user["id"]) or {}
+
+    with st.form("profile_form"):
+        name     = st.text_input("Full Name",    profile.get("name", ""))
+        bio      = st.text_area("Bio",           profile.get("bio", ""))
+        location = st.text_input("Location",     profile.get("location", ""))
+        avatar   = st.file_uploader("Avatar",     type=["png","jpg","jpeg"])
+
+        if st.form_submit_button("Save"):
+            profile["name"]     = name
+            profile["bio"]      = bio
+            profile["location"] = location
+            if avatar:
+                profile["avatar"] = base64.b64encode(avatar.read()).decode()
+            update_profile(user["id"], profile)
+            st.success("✅ Profile updated!")
+            st.session_state.page = "home"
+
 def sidebar():
     st.sidebar.title("🌱 EcoFood Navigation")
     
@@ -783,6 +809,9 @@ def sidebar():
             st.session_state.page = 'search_recipes'
         if st.sidebar.button("❓ Help", use_container_width=True):
             st.session_state.page = 'help'
+        if st.sidebar.button("👤 Update Profile", use_container_width=True):
+            st.session_state.page = 'update_profile'
+
     else:
         # Logged in
         st.sidebar.write(f"Welcome, **{st.session_state.user['username']}**!")
@@ -801,11 +830,13 @@ def sidebar():
             st.session_state.page = 'browse_recipes'
         if st.sidebar.button("🔍 Search Recipes", use_container_width=True):
             st.session_state.page = 'search_recipes'
+        # if st.sidebar.button("💚 Donate", use_container_width=True):
+        #     st.session_state.page = 'donate'
         if st.sidebar.button("📞 Contact Support", use_container_width=True):
             st.session_state.page = 'contact_support'
         
         # Admin functions
-        if st.session_state.user.get('is_admin'):
+        if st.session_state.user['is_admin']:
             st.sidebar.markdown("---")
             st.sidebar.markdown("**Admin Functions**")
             if st.sidebar.button("👥 Manage Users", use_container_width=True):
@@ -814,16 +845,19 @@ def sidebar():
                 st.session_state.page = 'monitor_activity'
             if st.sidebar.button("✅ Approve Recipes", use_container_width=True):
                 st.session_state.page = 'approve_recipes'
+            # if st.sidebar.button("📈 Analytics", use_container_width=True):
+            #     st.session_state.page = 'analytics'
+            # if st.sidebar.button("⚙️ Configure Settings", use_container_width=True):
+            #     st.session_state.page = 'configure_settings'
         
         st.sidebar.markdown("---")
         if st.sidebar.button("🚪 Logout", use_container_width=True):
-            # Clear session on logout
             st.session_state.user = None
             st.session_state.page = 'home'
+            # Clear food detection data on logout
             st.session_state.detected_foods = []
             st.session_state.recommended_recipe = None
-            st.experimental_rerun()
-
+            st.rerun()
 
 def get_recipe_by_id(recipe_id):
     conn = sqlite3.connect('ecofood.db')
@@ -1604,6 +1638,8 @@ def main():
             st.error("Please login to make donations.")
     elif st.session_state.page == 'analytics':
         analytics_page()
+    elif st.session_state.page == 'update_profile':
+        update_profile_page()
     elif st.session_state.page == 'monitor_activity':
         monitor_activity_page()
     elif st.session_state.page == 'help':
