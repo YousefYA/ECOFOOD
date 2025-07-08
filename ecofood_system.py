@@ -15,7 +15,13 @@ import os
 from typing import List, Dict
 from profile import get_profile, update_profile
 import torch
+import os
+from dotenv import load_dotenv
+load_dotenv()
 
+#OPEN AI SETUP
+openai_api_key = os.getenv("OPENAI_API_KEY") or st.secrets.get("openai", {}).get("api_key")
+ 
 # Page configuration
 st.set_page_config(
     page_title="EcoFood - Sustainable Recipe Platform",
@@ -215,8 +221,8 @@ def load_food_detector():
 @st.cache_resource
 def load_recipe_recommender():
     # Try to get OpenAI API key from environment or user input
-    api_key = os.getenv('OPENAI_API_KEY')
-    return RecipeRecommender("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")
+    return RecipeRecommender(openai_api_key)
+
 
 # Database initialization (keeping previous functions)
 def init_database():
@@ -390,9 +396,6 @@ if 'user' not in st.session_state:
     st.session_state.user = None
 if 'page' not in st.session_state:
     st.session_state.page = 'home'
-
-# OpenAI API key setup
-openai_api_key = "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"
     
 # Food Detection Page
 def food_detection_page():
